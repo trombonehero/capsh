@@ -25,7 +25,6 @@ using std::endl;
 
 
 void Exit::execute() throw(FatalError) { throw FatalError(); }
-void Moo::execute() throw() { cout << "Moo." << endl; }
 void NoOp::execute() throw() {}
 
 void Help::execute() throw()
@@ -39,4 +38,22 @@ void Help::execute() throw()
 		<< "  moo            do something" << endl
 		<< endl
 		;
+}
+
+
+void Moo::execute() throw()
+{
+	cout <<
+"     (  (    )            \n"
+"   ( (     )   )          \n"
+"   ( (         )          \n"
+"  (           / )         \n"
+" ( ( \\       )           \n"
+"     ( |  // )            \n"
+"       |   |    (__)      \n"
+"       |   |    (oo)      \n"
+"       |   | ----\\/      \n"
+"       |   |    || \\     \n"
+"     **|   | ---||   moo. \n"
+"    ``'---------~~    " << endl;
 }
