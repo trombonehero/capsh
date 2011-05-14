@@ -14,32 +14,33 @@
  * limitations under the License.
  */
 
-#ifndef CAPSH_CMDPROC_H
-#define CAPSH_CMDPROC_H
+#ifndef CAPSH_EXCEPTION_H
+#define CAPSH_EXCEPTION_H
 
-#include "capsh.h"
-#include "path.h"
+#include <exception>
+#include <ostream>
+#include <string>
 
 namespace capsh
 {
-	typedef std::vector<std::string> CommandLine;
-	class CommandProcessor
+	// Base exception class.
+	class Exception : public std::exception
 	{
 		public:
-		CommandProcessor() throw(FatalError);
-		~CommandProcessor() throw();
-	
-		/// Process a single command line.
-		void process(const CommandLine& line) throw(CommandError, FatalError);
-	
-		/// Prompt the user for commands and execute them.
-		void run(const std::string& prompt = "[capsh]$ ") throw(FatalError);
+		Exception(const std::string& message) throw()
+			: message(message)
+		{
+		}
+		~Exception() throw() {}
 
+		std::string getMessage() const { return message; }
+		const char *what() const throw() { return message.c_str(); }
 
 		private:
-		GetLine *tecla;
-		Path path;
+		std::string message;
 	};
+
+	std::ostream& operator << (std::ostream& os, const Exception& e);
 }
 
-#endif // CAPSH_CMDPROC_H
+#endif // CAPSH_EXECEPTION_H

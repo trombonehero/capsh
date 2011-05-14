@@ -44,17 +44,15 @@ int main(int argc, char *argv[])
 		}
 	}
 	catch (FatalError& e) { cerr << e.what() << endl; }
-	catch (CommandError& e) { cerr << e.what() << endl; }
+	catch (Exception& e) { cerr << e.what() << endl; }
 	catch (...) { cerr << "uncaught exception" << endl; }
 
 	return 0;
 }
 
 
-CommandError::CommandError(const std::string& message) throw() : message(message) {}
+CommandError::CommandError(const std::string& message) throw() : Exception(message) {}
 CommandError::~CommandError() throw() {}
-const char* CommandError::what() const throw() { return message.c_str(); }
 
-FatalError::FatalError(const std::string& message) throw() : message(message) {}
+FatalError::FatalError(const std::string& message) throw() : Exception(message) {}
 FatalError::~FatalError() throw() {}
-const char* FatalError::what() const throw() { return message.c_str(); }

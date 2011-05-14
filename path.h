@@ -14,32 +14,29 @@
  * limitations under the License.
  */
 
-#ifndef CAPSH_CMDPROC_H
-#define CAPSH_CMDPROC_H
+#ifndef CAPSH_PATH_H
+#define CAPSH_PATH_H
 
-#include "capsh.h"
-#include "path.h"
+#include <string>
+#include <vector>
+
+#include <fcntl.h>
 
 namespace capsh
 {
-	typedef std::vector<std::string> CommandLine;
-	class CommandProcessor
+	/// Represents the binary search path.
+	class Path
 	{
 		public:
-		CommandProcessor() throw(FatalError);
-		~CommandProcessor() throw();
+		static Path create();
 	
-		/// Process a single command line.
-		void process(const CommandLine& line) throw(CommandError, FatalError);
+		int findFile(const std::string& name, int flags = O_RDONLY) const;
 	
-		/// Prompt the user for commands and execute them.
-		void run(const std::string& prompt = "[capsh]$ ") throw(FatalError);
-
-
 		private:
-		GetLine *tecla;
-		Path path;
+		Path(const std::vector<int>& path);
+	
+		std::vector<int> path;
 	};
 }
 
-#endif // CAPSH_CMDPROC_H
+#endif

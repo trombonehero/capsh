@@ -17,9 +17,10 @@
 #ifndef CAPSH_H
 #define CAPSH_H
 
-#include <exception>
 #include <string>
 #include <vector>
+
+#include "exception.h"
 
 // The main libtecla class.
 struct GetLine;
@@ -27,29 +28,19 @@ struct GetLine;
 namespace capsh
 {
 	/// Something went wrong in the execution of a command, but the shell is still ok.
-	class CommandError : public std::exception
+	class CommandError : public Exception
 	{
 		public:
 		CommandError(const std::string& message) throw();
 		~CommandError() throw();
-
-		virtual const char* what() const throw();
-
-		private:
-		std::string message;
 	};
 
 	/// Something about the command execution means that we need to kill the whole shell.
-	class FatalError : public std::exception
+	class FatalError : public Exception
 	{
 		public:
 		FatalError(const std::string& message = "") throw();
 		~FatalError() throw();
-
-		virtual const char* what() const throw();
-
-		private:
-		std::string message;
 	};
 	
 	class Command

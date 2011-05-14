@@ -33,7 +33,7 @@ using std::string;
 
 
 CommandProcessor::CommandProcessor() throw(FatalError)
-	: tecla(new_GetLine(1024, 2048))
+	: tecla(new_GetLine(1024, 2048)), path(Path::create())
 {
 	if (tecla == NULL)
 		throw FatalError("NULL tecla instance; error in libtecla?");
@@ -52,13 +52,13 @@ void CommandProcessor::process(const CommandLine& line) throw(CommandError, Fata
 
 	Command* command = llvm::StringSwitch<Command*>(line[0])
 		// builtins
-		.Case("", new NoOp())
+		.Cases("", "noop", new NoOp())
 		.Case("exit", new Exit())
 		.Case("help", new Help())
 		.Case("moo", new Moo())
 
 		// not a builtin: find in the PATH and execute
-		.Default(new Exec(line))
+		.Default(new Exec(line, path))
 		;
 
 	command->execute();
@@ -79,7 +79,9 @@ void CommandProcessor::run(const string& prompt) throw(FatalError)
 		{
 			string token;
 			input >> token;
-			commandline.push_back(token);
+
+			if (token.length() > 0)
+				commandline.push_back(token);
 		}
 
 		try { process(commandline); }

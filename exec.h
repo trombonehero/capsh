@@ -17,21 +17,27 @@
 #ifndef CAPSH_EXEC_H
 #define CAPSH_EXEC_H
 
-#include <string>
+#include <vector>
 
 #include "capsh.h"
+#include "cmdproc.h"
+#include "path.h"
 
 namespace capsh
 {
 	class Exec : public Command
 	{
 		public:
-		Exec(const std::vector<std::string>& commandline);
+		Exec(const CommandLine& commandline, const Path& path)
+			: path(path), commandline(commandline)
+		{
+		}
+
 		void execute() throw(CommandError, FatalError);
 	
 		private:
-		const std::string& command;
-		const std::vector<std::string>& commandline;
+		const Path& path;
+		std::vector<std::string> commandline;
 	};
 }
 

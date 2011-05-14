@@ -14,23 +14,64 @@
  * limitations under the License.
  */
 
+#include <cstdlib>
 #include <string>
 #include <vector>
 
+#include <stdlib.h>
+#include <unistd.h>
+
+#include <sys/wait.h>
+
 #include "exec.h"
+#include "file.h"
 
 using namespace capsh;
 
 using std::string;
 using std::vector;
 
+extern char **environ;
 
-Exec::Exec(const vector<string>& commandline)
-	: command(commandline[0]), commandline(commandline)
-{
-}
 
 void Exec::execute() throw(CommandError, FatalError)
 {
-	throw CommandError("Unknown command: '" + command + "'");
+	if (commandline.size() == 0) return;
+	const string& command = commandline[0];
+
+	int file = path.findFile(command);
+	if (file == -1) throw CommandError("Unknown command: '" + command + "'");
+
+	// Open files where we can.
+	char** argv = new char*[commandline.size() + 1];
+	for (int i = 0; i < commandline.size(); i++)
+	{
+		try
+		{
+			File file = File::open(commandline[i]);
+			// save file.getDescriptor() into an FD list
+			commandline[i] = file.getName();
+		}
+		catch(NoSuchFileException& e) {}
+		catch(FileException& e) { throw CommandError(e.getMessage()); }
+		catch(...)
+		{
+			char buffer[120];
+			sprintf(buffer, "%s:%d - unknown exception", __FILE__, __LINE__);
+			throw CommandError(buffer);
+		}
+
+		argv[i] = const_cast<char*>(commandline[i].c_str());
+	}
+	argv[commandline.size()] = NULL;
+
+	pid_t pid = fork();
+	if (pid == 0) fexecve(file, argv, environ);
+	else
+	{
+		int status;
+		do { wait(&status); } while(!WIFEXITED(status));
+	}
+
+	delete [] argv;
 }
