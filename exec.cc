@@ -44,7 +44,7 @@ void Exec::execute() throw(CommandError, FatalError)
 
 	// Open files where we can.
 	char** argv = new char*[commandline.size() + 1];
-	for (int i = 0; i < commandline.size(); i++)
+	for (unsigned int i = 0; i < commandline.size(); i++)
 	{
 		try
 		{
