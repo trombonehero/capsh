@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include <sys/capability.h>
+
 #include <fcntl.h>
 
 #include "exception.h"
@@ -44,7 +46,7 @@ namespace capsh
 	{
 		public:
 		static Path create();
-		File findFile(const std::string& name) const
+		File findFile(const std::string& name, cap_rights_t rights) const
 			throw (CError, FileNotInPathException);
 
 		/// A human-readable version of the path.

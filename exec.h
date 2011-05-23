@@ -19,6 +19,8 @@
 
 #include <vector>
 
+#include <poll.h>
+
 #include "capsh.h"
 #include "cmdproc.h"
 #include "path.h"
@@ -28,16 +30,41 @@ namespace capsh
 	class Exec : public Command
 	{
 		public:
-		Exec(const CommandLine& commandline, const Path& path)
-			: path(path), commandline(commandline)
-		{
-		}
+		Exec(const CommandLine& commandline, const Path& path) throw(CError);
 
 		void execute() throw(CommandError, FatalError);
 	
 		private:
+		void runInSandbox(
+				File binary,
+				const std::vector<std::string>& args,
+				const std::vector<File>& files)
+			throw(CError);
+
+		//! The path to search for binary executables.
 		const Path& path;
+
+		/**
+		 * Library which intercepts certain global-namespace-using libc calls,
+		 * such as open().
+		 *
+		 * If these calls weren't wrapped, they would simply fail with ECAPMODE.
+		 * Intercepting them allows us to do something useful, like pre-cache
+		 * files which the user explicitly mentiones on the command line. This
+		 * way, lots of unmodified software can be made to "speak" capabilities
+		 * "under the hood."
+		 */
+		File libcwrap;
+
+		//! The command line that the user wants to execute.
 		std::vector<std::string> commandline;
+
+		/**
+		 * The currently-running subprocess.
+		 *
+		 * capsh does not support multiple concurrent or backgrounded jobs (yet).
+		 */
+		struct pollfd child;
 	};
 }
 

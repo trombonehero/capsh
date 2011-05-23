@@ -30,6 +30,10 @@ using std::string;
 using std::vector;
 
 
+static cap_rights_t DIR_CAPS =
+	CAP_ATBASE | CAP_LOOKUP | CAP_FSTAT | CAP_READ | CAP_SEEK | CAP_FEXECVE;
+
+
 Path Path::create()
 {
 	string env(getenv("PATH"));
@@ -42,7 +46,7 @@ Path Path::create()
 		string name = env.substr(i, j - i);
 		i = j + 1;
 
-		try { dirs.push_back(File::open(name)); }
+		try { dirs.push_back(File::open(name, DIR_CAPS)); }
 		catch (NoSuchFileException e) { /* ignore invalid dirs */ }
 	}
 	while (j != string::npos);
@@ -50,14 +54,14 @@ Path Path::create()
 	return Path(dirs);
 }
 
-File Path::findFile(const string& name) const
+File Path::findFile(const string& name, cap_rights_t rights) const
 	throw (CError, FileNotInPathException)
 {
 	for (vector<File>::const_iterator i = path.begin(); i != path.end(); i++)
 	{
 		try
 		{
-			File f = File::openat(i->getDescriptor(), name);
+			File f = File::openat(i->getDescriptor(), name, rights);
 			if (f.isValid()) return f;
 		}
 		catch (NoSuchFileException e) { /* ignore unhelpful directories */ }

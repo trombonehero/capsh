@@ -17,8 +17,11 @@
 #include <err.h>
 #include <fcntl.h>
 
+#include <libcapsicum.h>
+
 #include <sys/stat.h>
 
+#include "capsicum.h"
 #include "file.h"
 
 using namespace capsh;
@@ -26,20 +29,28 @@ using namespace capsh;
 using std::string;
 
 
-File File::open(const string& name) throw(CError, FileException)
+cap_rights_t File::DEFAULT_RIGHTS = CAP_READ | CAP_SEEK;
+
+File File::open(const string& name, cap_rights_t rights)
+	throw(CapabilityModeException, CError, FileException)
 {
-	return openat(AT_FDCWD, name);
+	assertNotInCapabilityMode("open('" + name + "')");
+	return openat(AT_FDCWD, name, rights);
 }
 
 
-File File::openat(int base, const string& name) throw(CError, FileException)
+File File::openat(int base, const string& name, cap_rights_t rights)
+	throw(CError, FileException)
 {
+	if (base == AT_FDCWD)
+		assertNotInCapabilityMode("openat(AT_FDCWD, '" + name + "'");
+
 	// First, check to see if we've been given the correct filename.
 	struct stat s;
 	if (fstatat(base, name.c_str(), &s, 0) == 0)
-		return File(name, ::openat(base, name.c_str(), O_RDONLY));
+		return File(name, File::openFD(base, name, rights));
 
-	// Perhaps it's a tagged filename (e.g. 'file:rwx')...
+	// Not found; perhaps it's a tagged filename (e.g. 'file:rwx').
 	size_t lastColon = name.rfind(":");
 	if (lastColon == string::npos) throw NoSuchFileException(name);
 
@@ -50,25 +61,34 @@ File File::openat(int base, const string& name) throw(CError, FileException)
 	if (stat(untagged.c_str(), &s) != 0) throw NoSuchFileException(name);
 
 	// The file exists! can we open it with the requested mode?
-	bool read = (tag.find("r") != string::npos);
-	bool write = (tag.find("w") != string::npos);
-	bool exec = (tag.find("x") != string::npos);
+	rights |= CAP_SEEK;
+	if (tag.find("r") != string::npos) rights |= CAP_READ;
+	if (tag.find("w") != string::npos) rights |= CAP_WRITE;
+	if (tag.find("x") != string::npos) rights |= CAP_FEXECVE;
 
-	int fd = openat(base, untagged, read, write, exec);
+	int fd = File::openFD(base, untagged, rights);
 	if (fd == -1) throw FilePermissionException(untagged, tag);
-	else return File(untagged, fd);
+
+	return File(untagged, fd);
 }
 
-
-int File::openat(int base, const string& name, bool read, bool write, bool exec)
+int File::openFD(int base, const string& name, cap_rights_t rights)
+	throw(CError)
 {
-	int flags = exec ? O_EXEC : 0;
-	if (read && write) flags |= O_RDWR;
-	else if(read) flags |= O_RDONLY;
-	else if(write) flags |= O_WRONLY;
+	int flags = (rights & CAP_FEXECVE) ? O_EXEC : 0;
+	if ((rights & CAP_READ) and (rights & CAP_WRITE)) flags |= O_RDWR;
+	else if(rights & CAP_READ) flags |= O_RDONLY;
+	else if(rights & CAP_WRITE) flags |= O_WRONLY;
 
-	// TODO: wrap everything in capabilities
+	int fd = ::openat(base, name.c_str(), flags);
+	if (fd < 0)
+	{
+		if (errno == ENOENT) return fd;
+		else throw CError("open('" + name + "')");
+	}
 
-	return ::openat(base, name.c_str(), flags);
+	if (lc_limitfd(fd, rights) != 0) throw CError("lc_limitfd()");
+
+	return fd;
 }
 

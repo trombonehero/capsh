@@ -17,6 +17,7 @@
 #ifndef CAPSH_FILE_H
 #define CAPSH_FILE_H
 
+#include "capsicum.h"
 #include "exception.h"
 
 
@@ -54,19 +55,28 @@ namespace capsh
 	class File
 	{
 		public:
-		static File open(const std::string& name) throw(CError, FileException);
-		static File openat(int base, const std::string& name)
-            throw(CError, FileException);
+		static cap_rights_t DEFAULT_RIGHTS;
+
+		/// Open a file relative to an open directory descriptor.
+		static File openat(int base, const std::string& name,
+				cap_rights_t rights = DEFAULT_RIGHTS)
+			throw(CError, FileException);
+
+		/// Open a file using a global name (if allowed).
+		static File open(const std::string& name,
+				cap_rights_t rights = DEFAULT_RIGHTS)
+			throw(CapabilityModeException, CError, FileException);
+
+		File() throw() : name("uninitialized"), fd(-1) {}
 
 		bool isValid() const { return (fd != -1); }
-		std::string getName() const { return name; }
+		const std::string& getName() const { return name; }
 		int getDescriptor() const { return fd; }
 	
 		private:
-		static int openat(
-				int base, const std::string& name,
-				bool read, bool write, bool exec);
-
+		static int openFD(int base, const std::string& name, cap_rights_t rights)
+			throw(CError);
+	
 		File(const std::string& name, int fd) : name(name), fd(fd) {}
 	
 		std::string name;

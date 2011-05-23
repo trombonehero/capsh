@@ -18,10 +18,13 @@
 #include <string>
 #include <vector>
 
+#include <poll.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 #include <sys/wait.h>
+
+#include <libcapsicum.h>
 
 #include "exec.h"
 #include "file.h"
@@ -34,45 +37,126 @@ using std::vector;
 extern char **environ;
 
 
+//! The rights required by the run-time linker in order to execute a binary.
+static cap_rights_t BIN_RIGHTS =
+	CAP_READ | CAP_FSTAT | CAP_MMAP | CAP_MAPEXEC;
+
+//! The rights required by the run-time linker to link a library.
+static cap_rights_t LIB_RIGHTS =
+	CAP_FSTAT | CAP_FSTATFS | CAP_MMAP | CAP_READ | CAP_SEEK | CAP_MAPEXEC;
+
+
+// TODO: get the following from libcapsicum/rtld
+//! What libcapsicum and the runtime linker agree to call RTLD.
+static const char *RTLD_SUBSYSTEM = "org.freebsd.rtld-elf-cap";
+
+//! The class name of libraries we want the runtime linker to preload.
+static const char *RTLD_PRELOAD_CLASS = "PreloadLibrary";
+
+
+Exec::Exec(const CommandLine& commandline, const Path& path) throw(CError)
+	: path(path), commandline(commandline)
+{
+	child.fd = -1;
+	child.events = POLLERR | POLLHUP | POLLNVAL;
+
+	// TODO: actually understand library paths
+	libcwrap = File::open("cwrap/libcwrap.so", LIB_RIGHTS);
+}
+
+
 void Exec::execute() throw(CommandError, FatalError)
 {
 	if (commandline.size() == 0) return;
-	const string& command = commandline[0];
 
-	File file = path.findFile(command);
-	if (!file.isValid())
-		throw CommandError("Unknown command: '" + command + "'");
+	vector<string> args;
+	vector<File> files;
 
-	// Open files where we can.
-	char** argv = new char*[commandline.size() + 1];
-	for (unsigned int i = 0; i < commandline.size(); i++)
+
+	File command;
+	try
+	{
+		command = path.findFile(commandline[0], BIN_RIGHTS);
+
+		args.push_back(command.getName());
+		files.push_back(command);
+	}
+	catch (FileNotInPathException e) { throw FatalError(e.getMessage()); }
+
+
+	// Open files which have been explicitly named at the command line.
+	for (unsigned int i = 1; i < commandline.size(); i++)
 	{
 		try
 		{
 			File file = File::open(commandline[i]);
-			// save file.getDescriptor() into an FD list
-			commandline[i] = file.getName();
+
+			args.push_back(file.getName());
+			files.push_back(file);
 		}
-		catch(NoSuchFileException& e) {}
-		catch(FileException& e) { throw CommandError(e.getMessage()); }
-		catch(...)
+		catch (NoSuchFileException& e)
+		{
+			args.push_back(commandline[i]);
+		}
+		catch (CError& e) { throw CommandError(e.getMessage()); }
+		catch (FileException& e) { throw CommandError(e.getMessage()); }
+		catch (...)
 		{
 			char buffer[120];
 			sprintf(buffer, "%s:%d - unknown exception", __FILE__, __LINE__);
 			throw CommandError(buffer);
 		}
-
-		argv[i] = const_cast<char*>(commandline[i].c_str());
 	}
-	argv[commandline.size()] = NULL;
 
-	pid_t pid = fork();
-	if (pid == 0) fexecve(file.getDescriptor(), argv, environ);
-	else
+
+	// Run it!
+	try { runInSandbox(command, args, files); }
+	catch (CError& e) { throw FatalError(e.getMessage()); }
+}
+
+
+void Exec::runInSandbox(
+		File binary, const vector<string>& args, const vector<File>& files)
+	throw(CError)
+{
+	struct lc_fdlist *fds = lc_fdlist_new();
+	for (vector<File>::const_iterator i = files.begin(); i != files.end(); i++)
+		if (0 != lc_fdlist_add(fds, "org.freebsd.capsicum.capsh", "files",
+					i->getName().c_str(), i->getDescriptor()))
+			throw CError("lc_fdlist_add('" + i->getName() + "')");
+
+	// Preload the libcwrap wrapper to intercept global-namespace calls like
+	// open() and stat().
+	if (0 != lc_fdlist_add(fds, RTLD_SUBSYSTEM, RTLD_PRELOAD_CLASS,
+				libcwrap.getName().c_str(), libcwrap.getDescriptor()))
+		throw CError("Error in lc_fdlist_addcap()");
+
+	lc_fdlist_print(fds, 1);
+
+	char **argv = new char*[args.size() + 1];
+	for (unsigned int i = 0; i < args.size(); i ++)
+		argv[i] = const_cast<char*>(args[i].c_str());
+	argv[args.size()] = NULL;
+
+	int flags = LCH_PERMIT_STDOUT | LCH_PERMIT_STDERR;
+	struct lc_sandbox *sandbox;
+	if (0 != lch_startfd(
+			binary.getDescriptor(), binary.getName().c_str(),
+			argv, flags, fds, &sandbox))
+		throw CError("lch_startfd()");
+
+	if (0 != lch_getprocdesc(sandbox, &child.fd))
+		throw CError("lch_getprocdesc()");
+
+	while (true)
 	{
-		int status;
-		do { wait(&status); } while(!WIFEXITED(status));
+		int ready = poll(&child, 1, 1000);
+		if (ready == -1) throw CError("poll(sandboxed child)");
+		else if (ready == 0) continue;
+
+		if (child.revents & POLLHUP) break;
 	}
 
 	delete [] argv;
 }
+
