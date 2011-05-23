@@ -32,7 +32,10 @@ namespace capsh
 	class NoSuchFileException : public FileException
 	{
 		public:
-		NoSuchFileException(const std::string& message) throw() : FileException(message) {}
+		NoSuchFileException(const std::string& filename) throw()
+			: FileException("No such file '" + filename + "'")
+		{
+		}
 		~NoSuchFileException() throw() {}
 	};
 	
