@@ -42,7 +42,8 @@ namespace capsh
 	class FilePermissionException : public FileException
 	{
 		public:
-		FilePermissionException(const std::string& file, const std::string& mode) throw()
+		FilePermissionException(const std::string& file, const std::string& mode)
+				throw()
 			: FileException("Cannot access file '" + file + "' with mode " + mode)
 		{
 		}
