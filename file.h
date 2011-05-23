@@ -38,7 +38,7 @@ namespace capsh
 		}
 		~NoSuchFileException() throw() {}
 	};
-	
+
 	class FilePermissionException : public FileException
 	{
 		public:
