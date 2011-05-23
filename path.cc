@@ -15,14 +15,17 @@
  */
 
 #include <string>
+#include <sstream>
 
 #include <fcntl.h>
 #include <stdlib.h>
 
+#include "file.h"
 #include "path.h"
 
 using namespace capsh;
 
+using std::ostringstream;
 using std::string;
 using std::vector;
 
@@ -30,7 +33,7 @@ using std::vector;
 Path Path::create()
 {
 	string env(getenv("PATH"));
-	vector<int> dirs;
+	vector<File> dirs;
 
 	size_t i = 0, j;
 	do
@@ -39,23 +42,49 @@ Path Path::create()
 		string name = env.substr(i, j - i);
 		i = j + 1;
 
-		int dir = open(name.c_str(), O_RDONLY);
-		if (dir != -1) dirs.push_back(dir);
+		try { dirs.push_back(File::open(name)); }
+		catch (NoSuchFileException e) { /* ignore invalid dirs */ }
 	}
 	while (j != string::npos);
 
 	return Path(dirs);
 }
 
-int Path::findFile(const string& name, int flags) const
+File Path::findFile(const string& name) const
+	throw (CError, FileNotInPathException)
 {
-	for (vector<int>::const_iterator i = path.begin(); i != path.end(); i++)
+	for (vector<File>::const_iterator i = path.begin(); i != path.end(); i++)
 	{
-		int fd = openat(*i, name.c_str(), flags);
-		if (fd != -1) return fd;
+		try
+		{
+			File f = File::openat(i->getDescriptor(), name);
+			if (f.isValid()) return f;
+		}
+		catch (NoSuchFileException e) { /* ignore unhelpful directories */ }
 	}
 
-	return -1;
+	throw FileNotInPathException(name, *this);
 }
 
-Path::Path(const vector<int>& path) : path(path) {}
+string Path::str() const
+{
+	ostringstream oss;
+
+	oss << "[ ";
+	for (vector<File>::const_iterator i = path.begin(); i != path.end(); i++)
+		oss << "'" << i->getName() << "' ";
+
+	oss << "]";
+
+	return oss.str();
+}
+
+Path::Path(const vector<File>& path) throw() : path(path) {}
+
+
+FileNotInPathException::FileNotInPathException(
+		const string& filename, const Path& path) throw()
+	: Exception("No file '" + filename + "' in path " + path.str())
+{
+}
+

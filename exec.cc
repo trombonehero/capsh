@@ -39,8 +39,9 @@ void Exec::execute() throw(CommandError, FatalError)
 	if (commandline.size() == 0) return;
 	const string& command = commandline[0];
 
-	int file = path.findFile(command);
-	if (file == -1) throw CommandError("Unknown command: '" + command + "'");
+	File file = path.findFile(command);
+	if (!file.isValid())
+		throw CommandError("Unknown command: '" + command + "'");
 
 	// Open files where we can.
 	char** argv = new char*[commandline.size() + 1];
@@ -66,7 +67,7 @@ void Exec::execute() throw(CommandError, FatalError)
 	argv[commandline.size()] = NULL;
 
 	pid_t pid = fork();
-	if (pid == 0) fexecve(file, argv, environ);
+	if (pid == 0) fexecve(file.getDescriptor(), argv, environ);
 	else
 	{
 		int status;

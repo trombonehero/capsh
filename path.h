@@ -22,20 +22,38 @@
 
 #include <fcntl.h>
 
+#include "exception.h"
+#include "file.h"
+
 namespace capsh
 {
+	class Path;
+
+	/// A file could not be found in a path.
+	class FileNotInPathException : public Exception
+	{
+		public:
+		FileNotInPathException(const std::string& filename, const Path& path)
+			throw();
+
+		~FileNotInPathException() throw() {}
+	};
+
 	/// Represents the binary search path.
 	class Path
 	{
 		public:
 		static Path create();
-	
-		int findFile(const std::string& name, int flags = O_RDONLY) const;
-	
+		File findFile(const std::string& name) const
+			throw (CError, FileNotInPathException);
+
+		/// A human-readable version of the path.
+		std::string str() const;
+
 		private:
-		Path(const std::vector<int>& path);
+		Path(const std::vector<File>& path) throw();
 	
-		std::vector<int> path;
+		std::vector<File> path;
 	};
 }
 
