@@ -21,9 +21,12 @@
 #include <ostream>
 #include <string>
 
+#include <errno.h>
+
+
 namespace capsh
 {
-	// Base exception class.
+	/// Base exception class.
 	class Exception : public std::exception
 	{
 		public:
@@ -38,6 +41,14 @@ namespace capsh
 
 		private:
 		std::string message;
+	};
+
+	/// A c-style error has occurred.
+	class CError : public Exception
+	{
+		public:
+		CError(const std::string& context, int errnum = errno) throw();
+		~CError() throw() {}
 	};
 
 	std::ostream& operator << (std::ostream& os, const Exception& e);

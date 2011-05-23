@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
+
 #include "exception.h"
 
+using capsh::CError;
 using capsh::Exception;
 using std::ostream;
+using std::string;
+
+CError::CError(const std::string& context, int errnum) throw()
+	: Exception("Error in " + context + ": " + strerror(errnum))
+{
+}
 
 ostream& operator << (ostream& os, const Exception& e)
 {
 	os << e.getMessage();
 	return os;
 }
+
