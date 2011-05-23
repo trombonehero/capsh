@@ -54,14 +54,19 @@ namespace capsh
 	class File
 	{
 		public:
-		static File open(std::string name) throw(FileException);
-	
-		std::string getName() { return name; }
-		int getDescriptor() { return fd; }
+		static File open(const std::string& name) throw(CError, FileException);
+		static File openat(int base, const std::string& name)
+            throw(CError, FileException);
+
+		bool isValid() const { return (fd != -1); }
+		std::string getName() const { return name; }
+		int getDescriptor() const { return fd; }
 	
 		private:
-		static int open(const std::string& name, bool read, bool write, bool exec);
-	
+		static int openat(
+				int base, const std::string& name,
+				bool read, bool write, bool exec);
+
 		File(const std::string& name, int fd) : name(name), fd(fd) {}
 	
 		std::string name;

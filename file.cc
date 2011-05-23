@@ -26,12 +26,18 @@ using namespace capsh;
 using std::string;
 
 
-File File::open(string name) throw(FileException)
+File File::open(const string& name) throw(CError, FileException)
+{
+	return openat(AT_FDCWD, name);
+}
+
+
+File File::openat(int base, const string& name) throw(CError, FileException)
 {
 	// First, check to see if we've been given the correct filename.
 	struct stat s;
-	if (stat(name.c_str(), &s) == 0)
-		return File(name, ::open(name.c_str(), O_RDONLY));
+	if (fstatat(base, name.c_str(), &s, 0) == 0)
+		return File(name, ::openat(base, name.c_str(), O_RDONLY));
 
 	// Perhaps it's a tagged filename (e.g. 'file:rwx')...
 	size_t lastColon = name.rfind(":");
@@ -48,13 +54,13 @@ File File::open(string name) throw(FileException)
 	bool write = (tag.find("w") != string::npos);
 	bool exec = (tag.find("x") != string::npos);
 
-	int fd = open(untagged, read, write, exec);
+	int fd = openat(base, untagged, read, write, exec);
 	if (fd == -1) throw FilePermissionException(untagged, tag);
 	else return File(untagged, fd);
 }
 
 
-int File::open(const string& name, bool read, bool write, bool exec)
+int File::openat(int base, const string& name, bool read, bool write, bool exec)
 {
 	int flags = exec ? O_EXEC : 0;
 	if (read && write) flags |= O_RDWR;
@@ -63,5 +69,6 @@ int File::open(const string& name, bool read, bool write, bool exec)
 
 	// TODO: wrap everything in capabilities
 
-	return ::open(name.c_str(), flags);
+	return ::openat(base, name.c_str(), flags);
 }
+
