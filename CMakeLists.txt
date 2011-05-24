@@ -4,7 +4,17 @@ project(capsh)
 set(CMAKE_C_FLAGS "-Wall -Werror")
 set(CMAKE_CXX_FLAGS "-Wall -Werror")
 
-add_executable(capsh builtins.cc capsh.cc cmdproc.cc exec.cc file.cc path.cc)
+add_subdirectory(cwrap)
+
+add_executable(capsh
+		builtins.cc
+		capsh.cc
+		cmdproc.cc
+		exception.cc
+		exec.cc
+		file.cc
+		path.cc
+	)
 
 find_path(TECLA_INCLUDE_DIR libtecla.h)
 include_directories(${TECLA_INCLUDE_DIR})
