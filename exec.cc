@@ -81,7 +81,7 @@ void Exec::execute() throw(CommandError, FatalError)
 		args.push_back(command.getName());
 		files.push_back(command);
 	}
-	catch (FileNotInPathException e) { throw FatalError(e.getMessage()); }
+	catch (FileNotInPathException e) { throw CommandError(e.getMessage()); }
 
 
 	// Open files which have been explicitly named at the command line.
