@@ -131,8 +131,6 @@ void Exec::runInSandbox(
 				libcwrap.getName().c_str(), libcwrap.getDescriptor()))
 		throw CError("Error in lc_fdlist_addcap()");
 
-	lc_fdlist_print(fds, 1);
-
 	char **argv = new char*[args.size() + 1];
 	for (unsigned int i = 0; i < args.size(); i ++)
 		argv[i] = const_cast<char*>(args[i].c_str());
