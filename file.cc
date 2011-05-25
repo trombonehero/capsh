@@ -29,7 +29,7 @@ using namespace capsh;
 using std::string;
 
 
-cap_rights_t File::DEFAULT_RIGHTS = CAP_READ | CAP_SEEK;
+cap_rights_t File::DEFAULT_RIGHTS = CAP_FSTAT | CAP_READ | CAP_SEEK;
 
 File File::open(const string& name, cap_rights_t rights)
 	throw(CapabilityModeException, CError, FileException)
