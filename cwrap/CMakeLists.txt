@@ -3,6 +3,7 @@
 add_library(cwrap SHARED
 		capmode.c
 		open.c
+		stat.c
 	)
 
 add_executable(cwraptest test.c)
