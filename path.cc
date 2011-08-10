@@ -31,7 +31,7 @@ using std::vector;
 
 
 static cap_rights_t DIR_CAPS =
-	CAP_ATBASE | CAP_LOOKUP | CAP_FSTAT | CAP_READ | CAP_SEEK | CAP_FEXECVE;
+	CAP_LOOKUP | CAP_FSTAT | CAP_READ | CAP_SEEK | CAP_FEXECVE;
 
 
 Path Path::create()
