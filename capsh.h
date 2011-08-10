@@ -42,10 +42,11 @@ namespace capsh
 		FatalError(const std::string& message = "") throw();
 		~FatalError() throw();
 	};
-	
+
 	class Command
 	{
 		public:
+		virtual ~Command() throw() {}
 		virtual void execute() throw(CommandError, FatalError) = 0;
 	};
 }
