@@ -31,6 +31,7 @@ namespace capsh
 	{
 		public:
 		Exec(const CommandLine& commandline, const Path& path) throw(CError);
+		~Exec() throw() {}
 
 		void execute() throw(CommandError, FatalError);
 	
