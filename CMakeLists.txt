@@ -4,6 +4,9 @@ project(capsh)
 set(CMAKE_C_FLAGS "-Wall -Werror")
 set(CMAKE_CXX_FLAGS "-Wall -Werror")
 
+set(CMAKE_C_FLAGS_DEBUG "-g -ggdb")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
+
 add_subdirectory(cwrap)
 
 add_executable(capsh
