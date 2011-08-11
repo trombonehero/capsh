@@ -47,25 +47,26 @@ int open(const char *path, int flags, ...)
 
 	// Try to find the file.
 	const char *relative_name;
-	int fd = lc_fdlist_find(fds, "org.freebsd.capsicum.capsh", "files", path,
-			&relative_name);
+	int fd = lc_fdlist_find(fds, "org.freebsd.capsicum.capsh", "files",
+		path, &relative_name);
 
 	if (fd >= 0) {
-		// Perhaps we found a directory descriptor and relative filename?
+		// Perhaps we found a directory descriptor and
+		// relative filename?
 		if (strnlen(relative_name, 1) != 0)
 			fd = openat(fd, relative_name, flags, ap);
 
 		return fd;
 	}
 
-	// If we failed to find the file, and we're not in capability mode, fall
-	// through to libc's open().
+	// If we failed to find the file, and we're not in capability mode,
+	// fall through to libc's open().
 	if (!in_capability_mode())
 		return unwrapped(path, flags, ap);
 
 	// We're in capability mode, so we can't fall back to libc.
 	// We have a list of files, but the one we're looking for isn't in it.
-	// Return error, with errno set by lc_fdlist_find().
+	// Return error, with the errno previously set by lc_fdlist_find().
 	return (-1);
 }
 
