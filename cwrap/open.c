@@ -47,7 +47,7 @@ int open(const char *path, int flags, ...)
 
 	// Try to find the file.
 	const char *relative_name;
-	int fd = lc_fdlist_find(fds, "org.freebsd.capsicum.capsh", "files",
+	int fd = lc_fdlist_find(fds, "org.freebsd.capsicum.capsh", "file",
 		path, &relative_name);
 
 	if (fd >= 0) {
