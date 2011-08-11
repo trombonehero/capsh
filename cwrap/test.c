@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 	// Now open() should work, because the descriptor has been cached.
 	int copy = open(filename, O_RDONLY);
 	if (copy < 0)
-		err(-1, "open('%s')", filename);
+		err(-1, "open(cached descriptor for '%s')", filename);
 
 	// Everything works!
 	printf("OK\n");
