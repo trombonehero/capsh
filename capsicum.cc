@@ -53,7 +53,7 @@ string capsh::rightsString(cap_rights_t rights)
 	if (rights & CAP_FSTAT)				oss << "CAP_FSTAT ";
 	if (rights & CAP_MMAP)				oss << "CAP_MMAP ";
 	if (rights & CAP_FCNTL)				oss << "CAP_FCNTL ";
-	if (rights & CAP_POLL_KEVENT)		oss << "CAP_POLL_KEVENT ";
+	if (rights & CAP_POLL_EVENT)		oss << "CAP_POLL_KEVENT ";
 	if (rights & CAP_FSYNC)				oss << "CAP_FSYNC ";
 	if (rights & CAP_FCHOWN)			oss << "CAP_FCHOWN ";
 	if (rights & CAP_FCHMOD)			oss << "CAP_FCHMOD ";
@@ -85,7 +85,7 @@ string capsh::rightsString(cap_rights_t rights)
 	if (rights & CAP_SEM_POST)			oss << "CAP_SEM_POST ";
 	if (rights & CAP_SEM_WAIT)			oss << "CAP_SEM_WAIT ";
 	if (rights & CAP_SEM_GETVALUE)	oss << "CAP_SEM_GETVALUE ";
-	if (rights & CAP_POST_KEVENT)		oss << "CAP_POST_KEVENT ";
+	if (rights & CAP_POST_EVENT)		oss << "CAP_POST_KEVENT ";
 	if (rights & CAP_PDGETPID)			oss << "CAP_PDGETPID ";
 	if (rights & CAP_PDKILL)			oss << "CAP_PDKILL ";
 	if (rights & CAP_MAPEXEC)			oss << "CAP_MAPEXEC ";
