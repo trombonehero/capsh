@@ -35,7 +35,7 @@ File File::open(const string& name, cap_rights_t rights)
 	throw(CapabilityModeException, CError, FileException)
 {
 	assertNotInCapabilityMode("open('" + name + "')");
-	return openat(AT_FDCWD, name, rights);
+	return File::openat(AT_FDCWD, name, rights);
 }
 
 
