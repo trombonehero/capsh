@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <sstream>
+
 #include <err.h>
 #include <fcntl.h>
 
@@ -26,6 +28,7 @@
 
 using namespace capsh;
 
+using std::ostringstream;
 using std::string;
 
 
@@ -84,10 +87,37 @@ int File::openFD(int base, const string& name, cap_rights_t rights)
 	if (fd < 0)
 	{
 		if (errno == ENOENT) return fd;
-		else throw CError("open('" + name + "')");
+		else
+		{
+			ostringstream err;
+			err << "openat(" << base << ", '" << name << "', ";
+
+			if (flags & O_EXEC) err << "O_EXEC ";
+			if (flags & O_RDWR) err << "O_RDWR ";
+			else if (flags & O_WRONLY) err << "O_WRONLY ";
+			else err << "O_RDONLY ";
+			err << ")";
+			throw CError(err.str());
+		}
 	}
 
-	if (lc_limitfd(fd, rights) != 0) throw CError("lc_limitfd()");
+	if (lc_limitfd(fd, rights) != 0)
+	{
+		ostringstream err;
+		err << "lc_limitfd(";
+
+		cap_rights_t fd_rights;
+		if (cap_getrights(fd, &fd_rights) < 0) err << "FD:";
+		else err << "cap:[" << rightsString(fd_rights) << "]:";
+
+		err << fd << ", [" << rightsString(rights) << "])";
+
+		cap_rights_t baserights;
+		if (cap_getrights(base, &baserights) != -1)
+			err << " [base rights: " << rightsString(baserights) << "]";
+
+		throw CError(err.str());
+	}
 
 	return fd;
 }
