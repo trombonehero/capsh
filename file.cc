@@ -47,7 +47,7 @@ File File::openat(int base, const string& name, cap_rights_t rights)
 
 	// First, check to see if we've been given the correct filename.
 	struct stat s;
-	if (fstatat(base, name.c_str(), &s, 0) == 0)
+	if (::fstatat(base, name.c_str(), &s, 0) == 0)
 		return File(name, File::openFD(base, name, rights));
 
 	// Not found; perhaps it's a tagged filename (e.g. 'file:rwx').
