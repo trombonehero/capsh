@@ -30,8 +30,10 @@ using std::string;
 using std::vector;
 
 
+// We need all of the rights that binaries might require.
 static cap_rights_t DIR_CAPS =
-	CAP_LOOKUP | CAP_FSTAT | CAP_READ | CAP_SEEK | CAP_FEXECVE;
+	CAP_LOOKUP | CAP_FSTAT | CAP_FSTATFS | CAP_READ | CAP_SEEK | CAP_FEXECVE
+	| CAP_MMAP | CAP_MAPEXEC;
 
 
 Path Path::create()
