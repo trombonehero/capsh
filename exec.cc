@@ -37,13 +37,12 @@ using std::vector;
 extern char **environ;
 
 
-//! The rights required by the run-time linker in order to execute a binary.
-static cap_rights_t BIN_RIGHTS =
-	CAP_READ | CAP_FSTAT | CAP_MMAP | CAP_MAPEXEC;
-
 //! The rights required by the run-time linker to link a library.
 static cap_rights_t LIB_RIGHTS =
 	CAP_FSTAT | CAP_FSTATFS | CAP_MMAP | CAP_READ | CAP_SEEK | CAP_MAPEXEC;
+
+//! The rights required by the run-time linker in order to execute a binary.
+static cap_rights_t BIN_RIGHTS = LIB_RIGHTS | CAP_FEXECVE;
 
 
 // TODO: get the following from libcapsicum/rtld
